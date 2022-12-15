@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "joaquin-rg" {
 
 resource "azurerm_virtual_network" "joaquin-vn" {
   name                = "joaquin-vn"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["192.168.0.0/16"]
   location            = "eastus"
   resource_group_name = azurerm_resource_group.joaquin-rg.name
 
@@ -23,11 +23,7 @@ resource "azurerm_public_ip" "public_ip" {
   name                = "joaquin-public-ip"
   resource_group_name = azurerm_resource_group.joaquin-rg.name
   location            = azurerm_resource_group.joaquin-rg.location
-  allocation_method   = "Dynamic"
-
-  tags = {
-    environment = "production"
-  }
+  allocation_method   = "Static"
 }
 
 data "azurerm_public_ip" "public_ip" {
@@ -42,7 +38,7 @@ resource "azurerm_subnet" "joaquin-sn-public" {
   name                 = "joaquin-sn-public"
   resource_group_name  = azurerm_resource_group.joaquin-rg.name
   virtual_network_name = azurerm_virtual_network.joaquin-vn.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["192.168.1.0/24"]
 }
 
 
@@ -53,21 +49,21 @@ resource "azurerm_network_security_group" "joaquin-public-sg" {
 
 
   security_rule {
-    name                       = "allow-ssh-public-subnet"
+    name                       = "allow-ssh"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "10.0.2.0/24"
+    source_address_prefix      = "192.168.2.0/24"
     destination_address_prefix = "*"
   }
 
 
   security_rule {
-    name                       = "allow-RDP-conection"
-    description                = "allow-RDP"
+    name                       = "allow-web"
+    description                = "allow-web"
     priority                   = 200
     direction                  = "Inbound"
     access                     = "Allow"
@@ -131,7 +127,7 @@ resource "azurerm_subnet" "joaquin-sn-private" {
   name                 = "joaquin-sn-private"
   resource_group_name  = azurerm_resource_group.joaquin-rg.name
   virtual_network_name = azurerm_virtual_network.joaquin-vn.name
-  address_prefixes     = ["10.0.2.0/24"]
+  address_prefixes     = ["192.168.2.0/24"]
 
   lifecycle {
     create_before_destroy = true
@@ -147,8 +143,8 @@ resource "azurerm_network_security_group" "subnet_private_nsg" {
 
 
   security_rule {
-    name                       = "allow-all"
-    description                = "allow-all"
+    name                       = "allow-ssh"
+    description                = "allow-ssh"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
@@ -175,7 +171,7 @@ resource "azurerm_public_ip" "public_ip_ansible" {
   name                = "Public_IP_ANSIBLE"
   resource_group_name = azurerm_resource_group.joaquin-rg.name
   location            = azurerm_resource_group.joaquin-rg.location
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
 
   lifecycle {
     create_before_destroy = true
@@ -203,8 +199,8 @@ resource "azurerm_network_interface" "joaquin-private-nic-ansible" {
 
 
 
-data "template_file" "userdata_ansible" {
-  template = file("./scripts/userdata_ansible.cfg")
+data "template_file" "joaquin-userdata" {
+  template = file("./scripts/joaquin-userdata.cfg")
 }
 
 data "template_cloudinit_config" "config" {
@@ -213,7 +209,7 @@ data "template_cloudinit_config" "config" {
 
   part {
     content_type = "text/cloud-config"
-    content      = data.template_file.userdata_ansible.rendered
+    content      = data.template_file.joaquin-userdata.rendered
   }
 }
 

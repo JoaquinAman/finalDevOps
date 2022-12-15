@@ -5,7 +5,7 @@
   become: true
   tasks:
 
-  - name: install apache2 and php packages
+  - name: install apache and php
     apt:
       name:
         - apache2
@@ -13,7 +13,7 @@
       state: latest
       update_cache: yes
 
-  - name: copy html file for site
+  - name: copy static file for deployment
     copy:
       src: hello-world.html
       dest: /var/www/html/index.html
