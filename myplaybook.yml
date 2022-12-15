@@ -1,0 +1,22 @@
+
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: install apache2 and php packages
+    apt:
+      name:
+        - apache2
+        - libapache2-mod-php
+      state: latest
+      update_cache: yes
+
+  - name: copy html file for site
+    copy:
+      src: hello-world.html
+      dest: /var/www/html/index.html
+      owner: joaquin
+      group: joaquin
+      mode: 0644
